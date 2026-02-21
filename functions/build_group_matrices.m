@@ -102,6 +102,13 @@ for ri = 1:nROI
     t2name = task_names{2};
     results.roi(ri).diff_matrix = ...
         results.roi(ri).centroid.(t1name) - results.roi(ri).centroid.(t2name);
+    results.roi(ri).diff_rho = zeros(nSubj, 2); % Preallocate for polar coordinates
+    results.roi(ri).diff_theta = zeros(nSubj, 2); % Preallocate for polar coordinates
+    for hi = 1:2
+        [results.roi(ri).diff_theta(:,hi), results.roi(ri).diff_rho(:,hi)] = cart2pol(...
+            results.roi(ri).diff_matrix(:,2,hi),...
+            results.roi(ri).diff_matrix(:,3,hi));
+    end
 
 end % ROIs
 

@@ -77,6 +77,8 @@ if ~exist(dir_polar, 'dir'), mkdir(dir_polar); end
 for ri = 1:nROI
     r    = results.roi(ri).roi_num;
     diff = results.roi(ri).diff_matrix;   % [nSubj x 3 x nHemi]
+    diff_theta = results.roi(ri).diff_theta ; %nSubj x nHemi
+    diff_rho = results.roi(ri).diff_rho ; %nSubj x nHemi
 
     % ------------------------------------------------------------------
     % Figure A: Centroid shift bar plots
@@ -92,7 +94,7 @@ for ri = 1:nROI
     end
 
     if ~all_nan_bar
-        fig_bar = figure('Color', 'w', 'Visible', 'off', ...
+        fig_bar = figure('Color', 'w', 'Visible','off',...
             'Position', [100 100 FIG_WIDTH_BAR FIG_HEIGHT_BAR]);
 
         for hi = 1:nHemi
@@ -160,9 +162,9 @@ for ri = 1:nROI
     % Check whether any valid data exists (Y and Z columns = cols 2 and 3)
     all_nan_polar = true;
     for hi = 1:nHemi
-        y_vals = diff(:, 2, hi);
-        z_vals = diff(:, 3, hi);
-        valid  = ~isnan(y_vals) & ~isnan(z_vals);
+        rho_vals = diff_rho(:, hi);
+        theta_vals = diff_theta(:, hi);
+        valid  = ~isnan(rho_vals) & ~isnan(theta_vals);
         if any(valid)
             all_nan_polar = false;
             break;
@@ -170,7 +172,7 @@ for ri = 1:nROI
     end
 
     if ~all_nan_polar
-        fig_pol = figure('Color', 'w', 'Visible', 'off', ...
+        fig_pol = figure('Color', 'w', 'Visible','off',...
             'Position', [100 100 FIG_WIDTH_POLAR FIG_HEIGHT_POLAR]);
 
         tl = tiledlayout(fig_pol, 1, nHemi, 'TileSpacing', 'compact', ...
@@ -179,30 +181,17 @@ for ri = 1:nROI
               'FontSize', 11);
 
         % Compute shared radial limit across both hemispheres
-        all_rho = [];
-        for hi = 1:nHemi
-            y_diff = diff(:, 2, hi);
-            z_diff = diff(:, 3, hi);
-            valid  = ~isnan(y_diff) & ~isnan(z_diff);
-            if any(valid)
-                [~, rho] = cart2pol(y_diff(valid), z_diff(valid));
-                all_rho  = [all_rho; rho]; %#ok<AGROW>
-            end
-        end
 
-        if isempty(all_rho) || max(all_rho) == 0
-            rho_lim = 1;   % fallback
-        else
-            rho_lim = max(all_rho) * 1.1;
-        end
+
+        
 
         for hi = 1:nHemi
             hemi   = hemis{hi};
-            ax_pol = nexttile(tl);
+            ax_pol = polaraxes(tl);
+            ax_pol.Layout.Tile = hi;
+            
 
-            y_diff = diff(:, 2, hi);
-            z_diff = diff(:, 3, hi);
-            valid  = ~isnan(y_diff) & ~isnan(z_diff);
+            valid  = ~isnan(diff_rho(:,hi)) ;
 
             % Choose polar color
             if strcmpi(hemi, 'lh')
@@ -214,38 +203,39 @@ for ri = 1:nROI
             hold(ax_pol, 'on');
 
             if any(valid)
-                y_v = y_diff(valid);
-                z_v = z_diff(valid);
+                theta_v = diff_theta(valid,hi);
+                rho_v = diff_rho(valid,hi);
 
-                for si = 1:numel(y_v)
+                if isempty(rho_vals) || max(rho_vals) == 0
+                    rho_lim = 1;   % fallback
+                else
+                    rho_lim = max([max(rho_v) 40]);
+                end
+
+                for si = 1:numel(rho_v)
                     % Radial line from origin to subject point
-                    plot(ax_pol, [0 y_v(si)], [0 z_v(si)], '-', ...
+                    polarplot(ax_pol, [0 theta_v(si)], [0 rho_v(si)], '-', ...
                          'Color', pol_color, 'LineWidth', LINE_WIDTH_POLAR);
                     % Dot at endpoint
-                    plot(ax_pol, y_v(si), z_v(si), 'o', ...
+                    polarplot(ax_pol, [0 theta_v(si)], [0 rho_v(si)], 'o', ...
                          'Color', pol_color, 'MarkerFaceColor', pol_color, ...
                          'MarkerSize', MARKER_SIZE_POLAR);
                 end
             end
 
-            % Reference lines at origin
-            plot(ax_pol, [-rho_lim rho_lim], [0 0], 'k:', 'LineWidth', 0.5);
-            plot(ax_pol, [0 0], [-rho_lim rho_lim], 'k:', 'LineWidth', 0.5);
-
             hold(ax_pol, 'off');
 
             % Axis formatting
-            axis(ax_pol, 'equal');
-            xlim(ax_pol, [-rho_lim rho_lim]);
-            ylim(ax_pol, [-rho_lim rho_lim]);
-            xlabel(ax_pol, 'Y diff (mm)');
-            ylabel(ax_pol, 'Z diff (mm)');
+            rlim(ax_pol, [0 rho_lim]);
+            rticks(floor(linspace(0,rho_lim,5)))
             title(ax_pol, sprintf('%s', upper(hemi)));
             box(ax_pol, 'off');
         end
 
-        % Save and close
+%        Save and close
         save_path_pol = fullfile(dir_polar, sprintf('ROI%d_polar_YZ.png', r));
+        saveas(fig_pol, save_path_pol);
+        save_path_pol = fullfile(dir_polar, sprintf('ROI%d_polar_YZ.pdf', r));
         saveas(fig_pol, save_path_pol);
         close(fig_pol);
         fprintf('  Saved: %s\n', save_path_pol);
