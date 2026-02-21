@@ -32,20 +32,26 @@ cfg.subjects = {
 cfg.hemis    = {'lh', 'rh'};
 cfg.roi_list = 39:43;
 
-cfg.base_dir   = '/path/to/your/data';   % <-- CHANGE THIS
+cfg.base_dir   = '../../../data/';   % <-- CHANGE THIS
 cfg.output_dir = fullfile(pwd, 'output');
+
+cfg.coord_file
 
 % Task 1 (minuend in diff matrix: task1 - task2)
 cfg.tasks(1).name            = 'imagery';
 cfg.tasks(1).subdir          = 'imagery';
 cfg.tasks(1).roi_stem        = 'nicole-final-roi';
-cfg.tasks(1).coords_filename = 'ref.{hemi}.inflated.coords.1D';
+cfg.tasks(1).roi_filename = 'ref.{hemi}.inflated.coords.1D';
 
 % Task 2 (subtrahend in diff matrix)
 cfg.tasks(2).name            = 'dynloc';
 cfg.tasks(2).subdir          = 'dynloc';
 cfg.tasks(2).roi_stem        = 'nicole-new-roi';
-cfg.tasks(2).coords_filename = 'ref.{hemi}.inflated.coords.1D';
+cfg.tasks(2).roi_filename = 'ref.{hemi}.inflated.coords.1D';
+
+% Center-of-mass ROI settings
+cfg.com_n_vertices = 300;    % number of closest-to-COM vertices to keep
+cfg.com_output_dir = fullfile(cfg.output_dir, 'com_rois');  % where to save COM ROI files
 %% =====================================================================
 
 %% Setup
@@ -100,6 +106,42 @@ for si = 1:numel(cfg.subjects)
         end % tasks
     end % hemis
 end % subjects
+
+%% Create center-of-mass sub-ROIs
+fprintf('\nCreating center-of-mass sub-ROIs (n=%d vertices)...\n', cfg.com_n_vertices);
+
+nSubj  = numel(cfg.subjects);
+nHemis = numel(cfg.hemis);
+nTasks = numel(cfg.tasks);
+
+for s = 1:nSubj
+    subj = cfg.subjects{s};
+
+    for h = 1:nHemis
+        hemi = cfg.hemis{h};
+
+        for t = 1:nTasks
+            task = cfg.tasks(t);
+            fprintf('  COM ROI: %s | %s | %s\n', subj, hemi, task.name);
+
+            coords_fname = strrep(task.coords_filename, '{hemi}', hemi);
+            coords_path  = fullfile(cfg.base_dir, subj, coords_fname);
+
+            roi_fname = sprintf('ref.%s-%s.1D.roi', task.roi_stem, hemi);
+            roi_path  = fullfile(cfg.base_dir, subj, task.subdir, roi_fname);
+
+            % Output goes in: <com_output_dir>/<subj>/<task.name>/
+            subj_com_dir = fullfile(cfg.com_output_dir, subj, task.name);
+
+            try
+                create_com_roi(roi_path, coords_path, cfg.roi_list, ...
+                               subj_com_dir, cfg.com_n_vertices);
+            catch ME
+                warning('COM ROI failed for %s %s %s: %s', subj, hemi, task.name, ME.message);
+            end
+        end
+    end
+end
 
 %% Build group matrices
 fprintf('\n=== Building group matrices ===\n');
