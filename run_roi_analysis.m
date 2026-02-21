@@ -35,19 +35,19 @@ cfg.roi_list = 39:43;
 cfg.base_dir   = '../../../data/';   % <-- CHANGE THIS
 cfg.output_dir = fullfile(pwd, 'output');
 
-cfg.coord_file
+cfg.coord_file = '{hemi}.inflated.coords.txt';
+cfg.coord_path = '../../';
 
 % Task 1 (minuend in diff matrix: task1 - task2)
 cfg.tasks(1).name            = 'imagery';
 cfg.tasks(1).subdir          = 'imagery';
 cfg.tasks(1).roi_stem        = 'nicole-final-roi';
-cfg.tasks(1).roi_filename = 'ref.{hemi}.inflated.coords.1D';
+
 
 % Task 2 (subtrahend in diff matrix)
 cfg.tasks(2).name            = 'dynloc';
 cfg.tasks(2).subdir          = 'dynloc';
 cfg.tasks(2).roi_stem        = 'nicole-new-roi';
-cfg.tasks(2).roi_filename = 'ref.{hemi}.inflated.coords.1D';
 
 % Center-of-mass ROI settings
 cfg.com_n_vertices = 300;    % number of closest-to-COM vertices to keep
@@ -77,10 +77,10 @@ for si = 1:numel(cfg.subjects)
             task = cfg.tasks(ti);
 
             % Resolve {hemi} placeholder in coords_filename
-            resolved_coords = strrep(task.coords_filename, '{hemi}', hemi);
+            resolved_coords = strrep(cfg.coord_file, '{hemi}', hemi);
 
             % Build full file paths
-            coords_path = fullfile(cfg.base_dir, subj, resolved_coords);
+            coords_path = fullfile(cfg.coord_path, resolved_coords);
             roi_filename = ['ref.' task.roi_stem '-' hemi '.1D.roi'];
             roi_path     = fullfile(cfg.base_dir, subj, task.subdir, roi_filename);
 
@@ -124,8 +124,8 @@ for s = 1:nSubj
             task = cfg.tasks(t);
             fprintf('  COM ROI: %s | %s | %s\n', subj, hemi, task.name);
 
-            coords_fname = strrep(task.coords_filename, '{hemi}', hemi);
-            coords_path  = fullfile(cfg.base_dir, subj, coords_fname);
+            coords_fname = strrep(cfg.coord_file, '{hemi}', hemi);
+            coords_path  = fullfile(cfg.coord_path, coords_fname);
 
             roi_fname = sprintf('ref.%s-%s.1D.roi', task.roi_stem, hemi);
             roi_path  = fullfile(cfg.base_dir, subj, task.subdir, roi_fname);
