@@ -31,6 +31,7 @@ cfg.subjects = {
 
 cfg.hemis    = {'lh', 'rh'};
 cfg.roi_list = 39:43;
+cfg.roi_names = {'Lateral','Ventral','Medial','Sup. Par.'};
 
 cfg.base_dir   = '../../../data/';   % <-- CHANGE THIS
 cfg.output_dir = fullfile(pwd, 'output');
@@ -159,5 +160,11 @@ fprintf('\nResults saved to: %s\n', save_path);
 %% Plot
 fprintf('\n=== Plotting results ===\n');
 plot_results(results, cfg);
+
+fprintf('\n=== Pipeline complete ===\n');
+
+%% Running statistics
+fprintf('\n=== Calculating statistics ===\n');
+run_shift_statistics(results, cfg);
 
 fprintf('\n=== Pipeline complete ===\n');
