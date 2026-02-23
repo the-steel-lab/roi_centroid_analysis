@@ -165,6 +165,8 @@ fprintf('\n=== Pipeline complete ===\n');
 
 %% Running statistics
 fprintf('\n=== Calculating statistics ===\n');
-run_shift_statistics(results, cfg);
+results = run_shift_statistics(results, cfg);
 
 fprintf('\n=== Pipeline complete ===\n');
+
+%%
