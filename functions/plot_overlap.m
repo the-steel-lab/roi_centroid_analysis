@@ -126,4 +126,78 @@ close(fig);
 fprintf('  Saved: %s\n', save_path_png);
 fprintf('  Saved: %s\n', save_path_pdf);
 
+%% Averaged figure: Jaccard — LH and RH averaged per subject
+% For each subject and ROI, take the nanmean of the LH and RH Jaccard
+% values.  One hemisphere contributes to the mean even if the other is NaN.
+if nHemi == 2
+    jac_lh = NaN(nSubj, nROI);
+    jac_rh = NaN(nSubj, nROI);
+    for roi = 1:nROI
+        jac_lh(:, roi) = results.roi(roi).overlap.(cfg.hemis{1}).jaccard;
+        jac_rh(:, roi) = results.roi(roi).overlap.(cfg.hemis{2}).jaccard;
+    end
+    jac_avg = nanmean(cat(3, jac_lh, jac_rh), 3);   % [nSubj x nROI]
+
+    % Exclude subjects with no valid data across all ROIs
+    valid_subj_avg = ~all(isnan(jac_avg) | jac_avg == 0, 2);
+    jac_avg = jac_avg(valid_subj_avg, :);
+
+    if ~isempty(jac_avg)
+        grp_mean_avg = nanmean(jac_avg, 1);   % 1 x nROI
+
+        fig_avg = figure('Color', 'w', 'Visible', 'off', ...
+            'Position', [100 100 round(FIG_WIDTH/2) FIG_HEIGHT]);
+        ax_avg = axes(fig_avg); %#ok<LAXES>
+        hold(ax_avg, 'on');
+
+        % Group-mean bars
+        for roi = 1:nROI
+            bar(ax_avg, roi, grp_mean_avg(roi), ...
+                'FaceColor', [0.40 0.55 0.70], ...
+                'EdgeColor', 'none', ...
+                'FaceAlpha', BAR_ALPHA);
+        end
+
+        % Connected lines per subject
+        for si = 1:size(jac_avg, 1)
+            y_vals = jac_avg(si, :);
+            for roi = 1:nROI-1
+                if ~isnan(y_vals(roi)) && ~isnan(y_vals(roi+1))
+                    h = plot(ax_avg, [roi, roi+1], [y_vals(roi), y_vals(roi+1)], '-', ...
+                             'Color', COLOR_LINE, 'LineWidth', LINE_WIDTH);
+                    h.Color(4) = LINE_ALPHA;
+                end
+            end
+        end
+
+        % Individual subject dots
+        for roi = 1:nROI
+            vals  = jac_avg(:, roi);
+            valid = ~isnan(vals);
+            if any(valid)
+                scatter(ax_avg, roi * ones(sum(valid), 1), vals(valid), ...
+                    MARKER_SIZE, COLOR_DOT, 'filled', ...
+                    'MarkerFaceAlpha', DOT_ALPHA);
+            end
+        end
+
+        hold(ax_avg, 'off');
+        xlim(ax_avg, [0.5, nROI + 0.5]);
+        ylim(ax_avg, [0, 1]);
+        set(ax_avg, 'XTick', 1:nROI, 'XTickLabel', cfg.roi_names);
+        ylabel(ax_avg, 'Jaccard Index');
+        title(ax_avg, sprintf('Jaccard Overlap LH+RH avg: %s vs. %s', ...
+              results.task_names{1}, results.task_names{2}));
+        box(ax_avg, 'off');
+
+        save_path_avg_png = fullfile(dir_overlap, sprintf('overlap_by_surface_avg_%s.png', cfg.study));
+        save_path_avg_pdf = fullfile(dir_overlap, sprintf('overlap_by_surface_avg_%s.pdf', cfg.study));
+        saveas(fig_avg, save_path_avg_png);
+        saveas(fig_avg, save_path_avg_pdf);
+        close(fig_avg);
+        fprintf('  Saved: %s\n', save_path_avg_png);
+        fprintf('  Saved: %s\n', save_path_avg_pdf);
+    end
+end
+
 end

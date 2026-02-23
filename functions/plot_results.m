@@ -33,6 +33,7 @@ function plot_results(results, cfg)
 % Bar colors per hemisphere
 COLOR_LH_BAR       = [0.20 0.60 1.00];   % blue-ish
 COLOR_RH_BAR       = [1.00 0.50 0.00];   % orange
+COLOR_AVG_BAR      = [0.40 0.55 0.70];   % slate blue (LH+RH averaged)
 
 % Individual dot colors per axis (X, Y, Z)
 COLOR_DOT_X        = [0.60 0.60 0.60];
@@ -152,6 +153,59 @@ for ri = 1:nROI
         saveas(fig_bar, save_path_bar);
         close(fig_bar);
         fprintf('  Saved: %s\n', save_path_bar);
+
+        % ------------------------------------------------------------------
+        % Figure A2: Centroid shift bar plot — hemispheres averaged
+        % ------------------------------------------------------------------
+        if nHemi == 2
+            diff_lh    = diff(:, :, 1);   % [nSubj x 3]
+            diff_rh    = diff(:, :, 2);   % [nSubj x 3]
+            diff_rh_lm = diff_rh;
+            % RH X dimension is multiplied by -1 so it reflects lateral-medial
+            % displacement (matching LH orientation) before the two hemispheres
+            % are averaged together.
+            diff_rh_lm(:, 1) = -diff_rh(:, 1);
+            diff_avg = nanmean(cat(3, diff_lh, diff_rh_lm), 3);   % [nSubj x 3]
+
+            if any(~isnan(diff_avg(:)))
+                fig_bar_avg = figure('Color', 'w', 'Visible', 'off', ...
+                    'Position', [100 100 round(FIG_WIDTH_BAR/2) FIG_HEIGHT_BAR]);
+                ax_avg = axes(fig_bar_avg); %#ok<LAXES>
+
+                grp_mean_avg = nanmean(diff_avg, 1);   % 1x3
+                bar(ax_avg, 1:3, grp_mean_avg, 'FaceColor', COLOR_AVG_BAR, ...
+                    'EdgeColor', 'none', 'FaceAlpha', 0.75);
+                hold(ax_avg, 'on');
+
+                dot_colors_avg = [COLOR_DOT_X; COLOR_DOT_Y; COLOR_DOT_Z];
+                for ax_idx = 1:3
+                    col_data = diff_avg(:, ax_idx);
+                    valid    = ~isnan(col_data);
+                    if any(valid)
+                        scatter(ax_avg, ax_idx + zeros(sum(valid),1), col_data(valid), ...
+                                MARKER_SIZE_DOT, dot_colors_avg(ax_idx,:), 'filled', ...
+                                'MarkerFaceAlpha', 0.7);
+                    end
+                end
+
+                plot(ax_avg, [0.5, 3.5], [0 0], 'k-', 'LineWidth', LINE_WIDTH_ZERO);
+                hold(ax_avg, 'off');
+
+                set(ax_avg, 'XTick', 1:3, 'XTickLabel', {'X (lat-med)', 'Y', 'Z'});
+                xlabel(ax_avg, 'Axis');
+                ylabel(ax_avg, sprintf('%s - %s (mm)', t1name, t2name));
+                title(ax_avg, sprintf('ROI %d - LH+RH avg centroid shift (%s - %s)', ...
+                                      r, t1name, t2name));
+                xlim(ax_avg, [0.5, 3.5]);
+                box(ax_avg, 'off');
+
+                save_path_bar_avg = fullfile(dir_bar, ...
+                    sprintf('ROI%d_centroid_shift_avg_%s.png', r, cfg.study));
+                saveas(fig_bar_avg, save_path_bar_avg);
+                close(fig_bar_avg);
+                fprintf('  Saved: %s\n', save_path_bar_avg);
+            end
+        end
     else
         fprintf('  Skipping bar plot for ROI %d (all NaN)\n', r);
     end
@@ -241,6 +295,62 @@ for ri = 1:nROI
         saveas(fig_pol, save_path_pol);
         close(fig_pol);
         fprintf('  Saved: %s\n', save_path_pol);
+
+        % ------------------------------------------------------------------
+        % Figure B2: Polar plot — hemispheres averaged
+        % ------------------------------------------------------------------
+        % Average Y and Z directly across hemispheres (no axis flip needed
+        % for polar since the Y-Z plane is comparable across hemispheres).
+        if nHemi == 2
+            yz_lh  = diff(:, 2:3, 1);   % [nSubj x 2]  (Y, Z columns)
+            yz_rh  = diff(:, 2:3, 2);   % [nSubj x 2]
+            yz_avg = nanmean(cat(3, yz_lh, yz_rh), 3);   % [nSubj x 2]
+            [theta_avg, rho_avg] = cart2pol(yz_avg(:,1), yz_avg(:,2));
+            valid_avg = ~isnan(rho_avg);
+
+            if any(valid_avg)
+                if max(rho_avg(valid_avg)) == 0
+                    rho_lim_avg = 1;
+                else
+                    rho_lim_avg = max([max(rho_avg(valid_avg)) 40]);
+                end
+
+                fig_pol_avg = figure('Color', 'w', 'Visible', 'off', ...
+                    'Position', [100 100 round(FIG_WIDTH_POLAR/2) FIG_HEIGHT_POLAR]);
+                tl_avg = tiledlayout(fig_pol_avg, 1, 1, 'TileSpacing', 'compact', ...
+                                     'Padding', 'compact');
+                title(tl_avg, sprintf('ROI %d Polar (Y-Z) LH+RH avg: %s - %s', ...
+                      r, t1name, t2name), 'FontSize', 11);
+
+                ax_pol_avg = polaraxes(tl_avg);
+                hold(ax_pol_avg, 'on');
+                for si = 1:sum(valid_avg)
+                    idx = find(valid_avg);
+                    polarplot(ax_pol_avg, [0 theta_avg(idx(si))], [0 rho_avg(idx(si))], '-', ...
+                              'Color', COLOR_AVG_BAR, 'LineWidth', LINE_WIDTH_POLAR);
+                    polarplot(ax_pol_avg, theta_avg(idx(si)), rho_avg(idx(si)), 'o', ...
+                              'Color', COLOR_AVG_BAR, 'MarkerFaceColor', COLOR_AVG_BAR, ...
+                              'MarkerSize', MARKER_SIZE_POLAR);
+                end
+                hold(ax_pol_avg, 'off');
+
+                rlim(ax_pol_avg, [0 rho_lim_avg]);
+                rticks(floor(linspace(0, rho_lim_avg, 5)));
+                thetaticks([0 45 90 135 180 225 270]);
+                thetaticklabels({'Ant','','Dor','','Post','','Vent'});
+                title(ax_pol_avg, 'LH+RH avg');
+                box(ax_pol_avg, 'off');
+
+                save_path_pol_avg = fullfile(dir_polar, ...
+                    sprintf('ROI%d_polar_YZ_avg_%s.png', r, cfg.study));
+                saveas(fig_pol_avg, save_path_pol_avg);
+                save_path_pol_avg = fullfile(dir_polar, ...
+                    sprintf('ROI%d_polar_YZ_avg_%s.pdf', r, cfg.study));
+                saveas(fig_pol_avg, save_path_pol_avg);
+                close(fig_pol_avg);
+                fprintf('  Saved: %s\n', save_path_pol_avg);
+            end
+        end
     else
         fprintf('  Skipping polar plot for ROI %d (all NaN)\n', r);
     end

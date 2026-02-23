@@ -33,8 +33,9 @@ cfg.hemis    = {'lh', 'rh'};
 cfg.roi_list = 39:43;
 cfg.roi_names = {'Lateral','Ventral','Medial','Sup. Par.'};
 
+cfg.study      = 'Dartmouth';           % <-- CHANGE THIS (appended to output folder and saved files)
 cfg.base_dir   = '../../../data/';   % <-- CHANGE THIS
-cfg.output_dir = fullfile(pwd, 'output');
+cfg.output_dir = fullfile(pwd, 'output', cfg.study);
 
 cfg.coord_file = '{hemi}.inflated.coords.txt';
 cfg.coord_path = '../../';
@@ -152,21 +153,30 @@ results = build_group_matrices(subjectData, cfg);
 fprintf('\n=== Computing vertex-level overlap ===\n');
 results = compute_overlap(results, subjectData, cfg);
 
-%% Save results
-save_path = fullfile(cfg.output_dir, 'results_roi_analysis.mat');
-save(save_path, 'results', 'cfg');
-fprintf('\nResults saved to: %s\n', save_path);
 
 %% Plot
+% anterior shift
 fprintf('\n=== Plotting results ===\n');
 plot_results(results, cfg);
 
 fprintf('\n=== Pipeline complete ===\n');
 
+% Overlap analysis
+fprintf('\n=== Plotting overlap ===\n');
+plot_overlap(results, cfg);
 %% Running statistics
 fprintf('\n=== Calculating statistics ===\n');
 results = run_shift_statistics(results, cfg);
 
+% overlap analysis
+fprintf('\n=== Overlap statistics ===\n');
+results = run_overlap_statistics(results, cfg);
+
 fprintf('\n=== Pipeline complete ===\n');
 
 %%
+
+%% Save results
+save_path = fullfile(cfg.output_dir, sprintf('results_roi_analysis_%s.mat', cfg.study));
+save(save_path, 'results', 'cfg');
+fprintf('\nResults saved to: %s\n', save_path);
