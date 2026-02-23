@@ -97,9 +97,9 @@ for ri = 1:nROI
             n_task1(si) = n1;
             n_task2(si) = n2;
 
-            if n1 == 0 && n2 == 0
-                % Both sets empty — union is zero; Jaccard undefined
-                n_shared(si) = 0;
+            if n1 == 0 || n2 == 0
+                % At least one task ROI is missing — overlap undefined
+                n_shared(si) = NaN;
                 jaccard(si)  = NaN;
             else
                 shared       = numel(intersect(vtx1, vtx2));

@@ -35,9 +35,9 @@ COLOR_LH_BAR       = [0.20 0.60 1.00];   % blue-ish
 COLOR_RH_BAR       = [1.00 0.50 0.00];   % orange
 
 % Individual dot colors per axis (X, Y, Z)
-COLOR_DOT_X        = [0.85 0.33 0.10];
-COLOR_DOT_Y        = [0.93 0.69 0.13];
-COLOR_DOT_Z        = [0.49 0.18 0.56];
+COLOR_DOT_X        = [0.60 0.60 0.60];
+COLOR_DOT_Y        = [0.60 0.60 0.60];
+COLOR_DOT_Z        = [0.60 0.60 0.60];
 
 % Polar line/dot colors per hemisphere
 COLOR_LH_POLAR     = [0.20 0.60 1.00];
@@ -148,7 +148,7 @@ for ri = 1:nROI
         end
 
         % Save and close
-        save_path_bar = fullfile(dir_bar, sprintf('ROI%d_centroid_shift.png', r));
+        save_path_bar = fullfile(dir_bar, sprintf('ROI%d_centroid_shift_%s.png', r, cfg.study));
         saveas(fig_bar, save_path_bar);
         close(fig_bar);
         fprintf('  Saved: %s\n', save_path_bar);
@@ -228,14 +228,16 @@ for ri = 1:nROI
             % Axis formatting
             rlim(ax_pol, [0 rho_lim]);
             rticks(floor(linspace(0,rho_lim,5)))
+            thetaticks([0 45 90 135 180 225 270])
+            thetaticklabels({'Ant','','Dor','','Post','','Vent'})
             title(ax_pol, sprintf('%s', upper(hemi)));
             box(ax_pol, 'off');
         end
 
 %        Save and close
-        save_path_pol = fullfile(dir_polar, sprintf('ROI%d_polar_YZ.png', r));
+        save_path_pol = fullfile(dir_polar, sprintf('ROI%d_polar_YZ_%s.png', r, cfg.study));
         saveas(fig_pol, save_path_pol);
-        save_path_pol = fullfile(dir_polar, sprintf('ROI%d_polar_YZ.pdf', r));
+        save_path_pol = fullfile(dir_polar, sprintf('ROI%d_polar_YZ_%s.pdf', r, cfg.study));
         saveas(fig_pol, save_path_pol);
         close(fig_pol);
         fprintf('  Saved: %s\n', save_path_pol);
