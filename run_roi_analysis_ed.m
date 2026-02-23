@@ -25,16 +25,16 @@ clear; clc;
 cfg = struct();
 
 cfg.subjects = {
-    'scim001','scim002','scim008','scim012','scim014','scim076', ...
-    'scim257','scim297','scim312','scim357','scim0989','scim995'
+    'scim001','scim003','scim004','scim005','scim006','scim007',...
+    'scim009','scim010','scim011','scim012'...
 };
 
 cfg.hemis    = {'lh', 'rh'};
 cfg.roi_list = 39:43;
 cfg.roi_names = {'Lateral','Ventral','Medial','Sup. Par.'};
 
-cfg.study      = 'Dartmouth';           % <-- CHANGE THIS (appended to output folder and saved files)
-cfg.base_dir   = '../../../data/';   % <-- CHANGE THIS
+cfg.study      = 'Edinburgh';           % <-- CHANGE THIS (appended to output folder and saved files)
+cfg.base_dir   = '../../../data-ed/output/';   % <-- CHANGE THIS
 cfg.output_dir = fullfile(pwd, 'output', cfg.study);
 
 cfg.coord_file = '{hemi}.inflated.coords.txt';
@@ -42,14 +42,14 @@ cfg.coord_path = '../../';
 
 % Task 1 (minuend in diff matrix: task1 - task2)
 cfg.tasks(1).name            = 'imagery';
-cfg.tasks(1).subdir          = 'imagery';
-cfg.tasks(1).roi_stem        = 'nicole-final-roi';
+cfg.tasks(1).subdir          = 'mim';
+cfg.tasks(1).roi_stem        = 'mim';
 
 
 % Task 2 (subtrahend in diff matrix)
-cfg.tasks(2).name            = 'dynloc';
-cfg.tasks(2).subdir          = 'dynloc';
-cfg.tasks(2).roi_stem        = 'nicole-new-roi';
+cfg.tasks(2).name            = 'perception';
+cfg.tasks(2).subdir          = 'per';
+cfg.tasks(2).roi_stem        = 'per';
 
 % Center-of-mass ROI settings
 cfg.com_n_vertices = 300;    % number of closest-to-COM vertices to keep
@@ -58,7 +58,6 @@ cfg.com_output_dir = fullfile(cfg.output_dir, 'com_rois');  % where to save COM 
 
 %% Setup
 addpath(fullfile(fileparts(mfilename('fullpath')), 'functions'));
-addpath('~/Documents/MATLAB/CircStat2012a/')
 
 if ~exist(cfg.output_dir, 'dir')
     mkdir(cfg.output_dir);

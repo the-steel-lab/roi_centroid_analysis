@@ -312,7 +312,7 @@ for ri = 1:nROI
                 if max(rho_avg(valid_avg)) == 0
                     rho_lim_avg = 1;
                 else
-                    rho_lim_avg = max([max(rho_avg(valid_avg)) 40]);
+                    rho_lim_avg = max([max(rho_avg(valid_avg)) 30]);
                 end
 
                 fig_pol_avg = figure('Color', 'w', 'Visible', 'off', ...
@@ -335,7 +335,7 @@ for ri = 1:nROI
                 hold(ax_pol_avg, 'off');
 
                 rlim(ax_pol_avg, [0 rho_lim_avg]);
-                rticks(floor(linspace(0, rho_lim_avg, 5)));
+                rticks(floor(linspace(0, rho_lim_avg, 4)));
                 thetaticks([0 45 90 135 180 225 270]);
                 thetaticklabels({'Ant','','Dor','','Post','','Vent'});
                 title(ax_pol_avg, 'LH+RH avg');
